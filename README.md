@@ -23,33 +23,33 @@ cp .env.example .env
 docker compose up --build
 ```
 
-All services start in parallel. Wait for:
+Aguarde as mensagens:
 
 ```
 ziplink_api    | ZipLink API running on port 3000
 ziplink_worker | Batch worker ready and listening for jobs
 ```
 
-### 2. Open the App
+### 3. Abrir o app
 
-Tudo em **uma única porta — http://localhost:80** via nginx reverso:
+Tudo em **uma única porta — http://localhost** via nginx reverso:
 
-| Path             | O que faz                                    |
-|------------------|----------------------------------------------|
-| `http://localhost/`         | Frontend Vue (SPA)                |
-| `http://localhost/api/`     | API REST (auth, links, batch)     |
-| `http://localhost/queues`   | Bull Board — painel de filas      |
-| `http://localhost/<slug>`   | Redirecionamento (`302`)          |
-| `http://localhost/health`   | Health check da API               |
+| Path                        | O que faz                             |
+|-----------------------------|---------------------------------------|
+| `http://localhost/`         | Frontend Vue (SPA)                    |
+| `http://localhost/api/`     | API REST (auth, links, batch)         |
+| `http://localhost/queues`   | Bull Board — painel de filas          |
+| `http://localhost/<slug>`   | Redirecionamento (`302`)              |
+| `http://localhost/health`   | Health check da API                   |
 
 > Internamente cada serviço ainda tem sua porta (`api:3000`, `frontend:5173`),
 > mas **nenhuma** é exposta ao host — só o nginx ouve na 80.
 
-### 3. Register & Use
+### 4. Criar conta e usar
 
-1. Open http://localhost:5173/register
-2. Create an account
-3. Start shortening links
+1. Abra http://localhost/register
+2. Crie uma conta
+3. Comece a encurtar links
 
 ---
 
@@ -61,12 +61,12 @@ All API routes are prefixed with `/api`.
 
 ```bash
 # Register
-curl -X POST http://localhost:3000/api/auth/register \
+curl -X POST http://localhost/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"you@example.com","password":"secret123"}'
 
 # Login
-curl -X POST http://localhost:3000/api/auth/login \
+curl -X POST http://localhost/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"you@example.com","password":"secret123"}'
 ```
@@ -77,30 +77,30 @@ curl -X POST http://localhost:3000/api/auth/login \
 TOKEN="<jwt from login>"
 
 # Create
-curl -X POST http://localhost:3000/api/links \
+curl -X POST http://localhost/api/links \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"original_url":"https://example.com/very-long-path","slug":"myslug","title":"My Link"}'
 
 # List
-curl http://localhost:3000/api/links \
+curl http://localhost/api/links \
   -H "Authorization: Bearer $TOKEN"
 
 # Update
-curl -X PATCH http://localhost:3000/api/links/<id> \
+curl -X PATCH http://localhost/api/links/<id> \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"active":false}'
 
 # Delete
-curl -X DELETE http://localhost:3000/api/links/<id> \
+curl -X DELETE http://localhost/api/links/<id> \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 ### Redirect
 
 ```
-GET http://localhost:3000/<slug>
+GET http://localhost/<slug>
 → 302 to original URL
 ```
 
@@ -117,13 +117,13 @@ https://example.com/a,,First link
 https://example.com/b,custom-b,Second link
 EOF
 
-curl -X POST http://localhost:3000/api/batch \
+curl -X POST http://localhost/api/batch \
   -H "Authorization: Bearer $TOKEN" \
   -F "file=@links.csv"
 # → 202 Accepted {"job_id":"..."}
 
 # Poll job status
-curl http://localhost:3000/api/batch/<job_id> \
+curl http://localhost/api/batch/<job_id> \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -148,7 +148,7 @@ locust -f locustfile.py \
   --users 600 \
   --spawn-rate 60 \
   --run-time 90s \
-  --host http://localhost:3000 \
+  --host http://localhost \
   --html report.html
 ```
 
@@ -160,7 +160,7 @@ Key flags:
 ### Run with dashboard (interactive)
 
 ```bash
-locust -f locustfile.py --host http://localhost:3000
+locust -f locustfile.py --host http://localhost
 ```
 Open http://localhost:8089 → set Users=600, Spawn rate=60 → Start.
 
@@ -185,7 +185,7 @@ ziplink/
 ├── backend/
 │   └── src/
 │       ├── config/         # DB, Redis, env, SQL migrations
-│       ├── controllers/    # Route handlers (auth, links, batch)
+│       ├── controllers/    # Route handlers (auth, links, batch, redirect)
 │       ├── middleware/     # JWT authentication
 │       ├── queues/         # BullMQ queue definitions
 │       ├── services/       # Business logic
@@ -198,6 +198,8 @@ ziplink/
 │       ├── stores/         # Pinia state (auth)
 │       ├── router/         # Vue Router guards
 │       └── views/          # LoginView, LinksView, BatchView, StatsView
+├── nginx/
+│   └── dev.conf            # Reverse proxy — single port 80
 ├── infra/
 │   └── terraform/          # AWS Free Tier EC2 deployment
 ├── tests/
@@ -209,14 +211,16 @@ ziplink/
 
 ## Environment Variables
 
-| Variable              | Default                   | Description                  |
-|-----------------------|---------------------------|------------------------------|
-| `DATABASE_URL`        | (postgres container)      | PostgreSQL connection string |
-| `REDIS_URL`           | (redis container)         | Redis connection string      |
-| `JWT_SECRET`          | (set in compose)          | JWT signing key (min 16 chars)|
-| `BASE_URL`            | `http://localhost:3000`   | Public base URL for short links|
-| `BCRYPT_ROUNDS`       | `10`                      | bcrypt cost factor           |
-| `WORKER_CONCURRENCY`  | `5`                       | Parallel batch jobs per worker|
+| Variable              | Default                 | Description                   |
+|-----------------------|-------------------------|-------------------------------|
+| `DATABASE_URL`        | (postgres container)    | PostgreSQL connection string  |
+| `REDIS_URL`           | (redis container)       | Redis connection string       |
+| `JWT_SECRET`          | (set in .env)           | JWT signing key (min 32 chars)|
+| `BASE_URL`            | `http://localhost`      | Public base URL for short links|
+| `BCRYPT_ROUNDS`       | `10`                    | bcrypt cost factor            |
+| `WORKER_CONCURRENCY`  | `5`                     | Parallel batch jobs per worker|
+
+Copie `.env.example` para `.env` — todas as variáveis já têm valores padrão para dev local.
 
 ---
 
