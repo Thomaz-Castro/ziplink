@@ -32,7 +32,7 @@ export const authApi = {
 };
 
 export const linksApi = {
-  list: (params?: { page?: number; limit?: number; search?: string; sortBy?: "created_at" | "clicks" }) =>
+  list: (params?: { page?: number; limit?: number; search?: string; sortBy?: "created_at" | "clicks"; active?: "true" | "false" }) =>
     api.get("/links", { params }),
   create: (data: { original_url: string; slug?: string; title?: string; expires_at?: string }) =>
     api.post("/links", data),

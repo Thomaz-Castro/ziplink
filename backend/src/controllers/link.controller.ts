@@ -21,6 +21,7 @@ const listSchema = z.object({
   limit: z.coerce.number().min(1).max(100).optional(),
   search: z.string().optional(),
   sortBy: z.enum(["created_at", "clicks"]).optional(),
+  active: z.enum(["true", "false"]).transform((v) => v === "true").optional(),
 });
 
 export async function linkController(app: FastifyInstance): Promise<void> {

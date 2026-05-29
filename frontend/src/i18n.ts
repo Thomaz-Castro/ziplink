@@ -50,6 +50,20 @@ const pt = {
     emptyState: "Nenhum link ainda. Crie seu primeiro link encurtado!",
     deleteConfirm: "Excluir este link? Todos os dados de analytics serão perdidos.",
     saveErrorFallback: "Falha ao salvar o link.",
+    pause: "Pausar",
+    resume: "Ativar",
+    clearExpiry: "Remover expiração",
+
+    filters: {
+      label: "Filtros",
+      status: "Status",
+      statusAll: "Todos",
+      statusActive: "Ativos",
+      statusInactive: "Inativos",
+      sortLabel: "Ordenar",
+      sortRecent: "Mais recentes",
+      sortClicks: "Mais clicados",
+    },
 
     modal: {
       createTitle: "Novo Link",

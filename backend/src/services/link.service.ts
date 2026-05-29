@@ -80,23 +80,25 @@ export class LinkService {
     const offset = (page - 1) * limit;
 
     const search = opts.search ? `%${opts.search}%` : null;
+    const activeFilter = opts.active !== undefined ? opts.active : null;
+    const orderBy = opts.sortBy === "clicks" ? "clicks DESC, created_at DESC" : "created_at DESC";
 
     const countResult = await query<{ count: string }>(
       `SELECT COUNT(*) FROM links WHERE user_id = $1
-       AND ($2::TEXT IS NULL OR original_url ILIKE $2 OR slug ILIKE $2 OR title ILIKE $2)`,
-      [userId, search]
+       AND ($2::TEXT IS NULL OR original_url ILIKE $2 OR slug ILIKE $2 OR title ILIKE $2)
+       AND ($3::BOOLEAN IS NULL OR active = $3)`,
+      [userId, search, activeFilter]
     );
 
     const total = parseInt(countResult.rows[0].count, 10);
 
-    const orderBy = opts.sortBy === "clicks" ? "clicks DESC, created_at DESC" : "created_at DESC";
-
     const rows = await query<Link>(
       `SELECT * FROM links WHERE user_id = $1
        AND ($2::TEXT IS NULL OR original_url ILIKE $2 OR slug ILIKE $2 OR title ILIKE $2)
+       AND ($3::BOOLEAN IS NULL OR active = $3)
        ORDER BY ${orderBy}
-       LIMIT $3 OFFSET $4`,
-      [userId, search, limit, offset]
+       LIMIT $4 OFFSET $5`,
+      [userId, search, activeFilter, limit, offset]
     );
 
     return { data: rows.rows, total, page, limit };

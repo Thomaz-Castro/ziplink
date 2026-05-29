@@ -60,6 +60,7 @@ export interface PaginationQuery {
   limit?: number;
   search?: string;
   sortBy?: "created_at" | "clicks";
+  active?: boolean;
 }
 
 export interface JwtPayload {

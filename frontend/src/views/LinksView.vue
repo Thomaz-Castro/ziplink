@@ -5,9 +5,27 @@
       <button class="btn btn-primary" @click="showCreate = true">{{ t.links.newLink }}</button>
     </div>
 
-    <!-- Search -->
+    <!-- Search + Filters -->
     <div class="search-bar">
       <input v-model="search" type="text" :placeholder="t.links.searchPlaceholder" @input="debouncedFetch" />
+    </div>
+
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label>{{ t.links.filters.status }}</label>
+        <select v-model="filterStatus" @change="applyFilters">
+          <option value="">{{ t.links.filters.statusAll }}</option>
+          <option value="true">{{ t.links.filters.statusActive }}</option>
+          <option value="false">{{ t.links.filters.statusInactive }}</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>{{ t.links.filters.sortLabel }}</label>
+        <select v-model="sortBy" @change="applyFilters">
+          <option value="created_at">{{ t.links.filters.sortRecent }}</option>
+          <option value="clicks">{{ t.links.filters.sortClicks }}</option>
+        </select>
+      </div>
     </div>
 
     <!-- Create / Edit Modal -->
@@ -79,6 +97,12 @@
             <td>{{ formatDate(link.created_at) }}</td>
             <td class="actions">
               <button class="btn btn-ghost" style="padding:.25rem .6rem;font-size:.8rem" @click="startEdit(link)">{{ t.common.edit }}</button>
+              <button
+                class="btn"
+                :class="link.active ? 'btn-warning' : 'btn-success'"
+                style="padding:.25rem .6rem;font-size:.8rem"
+                @click="toggleActive(link)"
+              >{{ link.active ? t.links.pause : t.links.resume }}</button>
               <button class="btn btn-danger" style="padding:.25rem .6rem;font-size:.8rem" @click="removeLink(link.id)">{{ t.common.delete }}</button>
             </td>
           </tr>
@@ -107,6 +131,7 @@ interface Link {
   title: string | null;
   clicks: number;
   active: boolean;
+  expires_at: string | null;
   created_at: string;
 }
 
@@ -118,6 +143,8 @@ const total = ref(0);
 const page = ref(1);
 const limit = ref(20);
 const search = ref("");
+const filterStatus = ref<"" | "true" | "false">("");
+const sortBy = ref<"created_at" | "clicks">("created_at");
 const loading = ref(false);
 const showCreate = ref(false);
 const editingLink = ref<Link | null>(null);
@@ -131,12 +158,23 @@ const totalPages = computed(() => Math.ceil(total.value / limit.value));
 async function fetchLinks(): Promise<void> {
   loading.value = true;
   try {
-    const res = await linksApi.list({ page: page.value, limit: limit.value, search: search.value || undefined });
+    const res = await linksApi.list({
+      page: page.value,
+      limit: limit.value,
+      search: search.value || undefined,
+      active: filterStatus.value || undefined,
+      sortBy: sortBy.value,
+    });
     links.value = (res.data as { data: Link[]; total: number }).data;
     total.value = (res.data as { data: Link[]; total: number }).total;
   } finally {
     loading.value = false;
   }
+}
+
+function applyFilters(): void {
+  page.value = 1;
+  fetchLinks();
 }
 
 let debounceTimer: ReturnType<typeof setTimeout>;
@@ -145,9 +183,19 @@ function debouncedFetch(): void {
   debounceTimer = setTimeout(() => { page.value = 1; fetchLinks(); }, 350);
 }
 
+function toDatetimeLocal(iso: string | null | undefined): string {
+  if (!iso) return "";
+  return new Date(iso).toISOString().slice(0, 16);
+}
+
 function startEdit(link: Link): void {
   editingLink.value = link;
-  form.value = { original_url: link.original_url, slug: "", title: link.title ?? "", expires_at: "" };
+  form.value = {
+    original_url: link.original_url,
+    slug: "",
+    title: link.title ?? "",
+    expires_at: toDatetimeLocal(link.expires_at),
+  };
 }
 
 function closeModal(): void {
@@ -165,6 +213,7 @@ async function handleSave(): Promise<void> {
       await linksApi.update(editingLink.value.id, {
         original_url: form.value.original_url,
         title: form.value.title || undefined,
+        expires_at: form.value.expires_at ? new Date(form.value.expires_at).toISOString() : null,
       });
     } else {
       await linksApi.create({
@@ -182,6 +231,11 @@ async function handleSave(): Promise<void> {
   } finally {
     saving.value = false;
   }
+}
+
+async function toggleActive(link: Link): Promise<void> {
+  await linksApi.update(link.id, { active: !link.active });
+  link.active = !link.active;
 }
 
 async function removeLink(id: string): Promise<void> {
@@ -209,8 +263,21 @@ onMounted(fetchLinks);
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
 .page-header h2 { font-size: 1.4rem; font-weight: 700; }
 
-.search-bar { margin-bottom: 1rem; }
+.search-bar { margin-bottom: .5rem; }
 .search-bar input { max-width: 400px; }
+
+.filters-bar { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+.filter-group { display: flex; align-items: center; gap: .4rem; font-size: .85rem; }
+.filter-group label { color: var(--text-muted); white-space: nowrap; }
+.filter-group select {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .3rem .6rem;
+  font-size: .85rem;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
 
 .modal-backdrop {
   position: fixed; inset: 0; background: rgba(0,0,0,.4);
@@ -239,6 +306,10 @@ tr:hover td { background: var(--surface-2); }
 .copy-btn:hover { color: var(--brand); }
 .url-cell { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .actions { display: flex; gap: .35rem; }
+.btn-warning { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+.btn-warning:hover { background: #fde68a; }
+.btn-success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+.btn-success:hover { background: #a7f3d0; }
 
 .pagination {
   display: flex; align-items: center; justify-content: center; gap: 1rem;

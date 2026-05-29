@@ -40,10 +40,13 @@ function handleLogout(): void {
 </script>
 
 <style scoped>
-.layout { display: flex; min-height: 100vh; }
+.layout { display: flex; height: 100vh; overflow: hidden; }
 
 .sidebar {
   width: 220px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
   background: var(--surface);
   border-right: 1px solid var(--border);
   display: flex;
@@ -51,6 +54,7 @@ function handleLogout(): void {
   padding: 1.5rem 1rem;
   gap: .25rem;
   flex-shrink: 0;
+  overflow-y: auto;
 }
 
 .sidebar-brand {
@@ -90,5 +94,5 @@ function handleLogout(): void {
 }
 .logout:hover { background: #fee2e2; }
 
-.content { flex: 1; padding: 2rem; overflow-y: auto; }
+.content { flex: 1; padding: 2rem; overflow-y: auto; height: 100vh; }
 </style>
