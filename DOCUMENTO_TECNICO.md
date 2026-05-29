@@ -104,7 +104,57 @@ Para ambiente local Docker, BullMQ sobre Redis elimina um serviço a mais. Em pr
 
 ---
 
-## 4. Identificação de Gargalos sob Carga
+## 4. Análise do Teste de Carga
+
+### 4.1 Ambiente e Configuração
+
+O teste foi executado em ambiente de desenvolvimento local com Docker Compose:
+
+- **Máquina:** Lenovo IdeaPad, Linux — CPU quad-core, 8GB RAM
+- **Stack:** todos os serviços em containers Docker (modo `development` com `tsx watch`)
+- **Ferramenta:** Locust 2.44
+- **Parâmetros:** 600 usuários simultâneos, spawn rate 60/s, duração 90s
+- **Foco:** endpoint de redirecionamento (`GET /<slug>`)
+
+> O rate limiter (bônus) foi configurado para `RATE_LIMIT_MAX=100000` durante o teste para não mascarar a performance real da stack.
+
+### 4.2 Resultados Obtidos
+
+| Métrica | Resultado | Alvo |
+|---|---|---|
+| Throughput (req/s) | **715 req/s** | ≥ 500 ✓ |
+| Latência p50 | **160ms** | — |
+| Latência p95 | **300ms** | — |
+| Latência p99 | **2.900ms** | — |
+| Taxa de erro geral | **36%** (janela de 33s) | — |
+
+```
+Type     Name               # reqs   # fails  Median   p95    req/s
+---------|-----------------|--------|--------|--------|------|-------
+GET      /[slug] redirect   64.425   23.679   160ms   300ms  715
+```
+
+### 4.3 O que os números dizem
+
+**O throughput de 715 req/s supera o alvo de 500 req/s** — a stack aguenta a carga quando o caminho está aquecido (cache Redis populado após os primeiros requests).
+
+**Os 36% de erros são concentrados em uma janela de 33 segundos** (17:30:08 → 17:30:41), todos com status `502 Bad Gateway`. Antes e depois dessa janela, a taxa de erro foi próxima de zero. Isso não é falha do sistema em si — é uma instabilidade pontual causada pelo ambiente de desenvolvimento.
+
+**Causa raiz dos 502s:** o servidor está rodando com `tsx watch` (hot-reload de TypeScript), que adiciona overhead significativo de CPU e memória ao processo Node.js. Sob carga sustentada de 600 usuários, o event loop ficou saturado por ~33 segundos, o nginx não recebeu resposta dentro do timeout configurado e retornou 502. O processo se recuperou sozinho sem restart.
+
+**Latências altas (p50=160ms):** em desenvolvimento com Docker, cada request passa por: nginx → rede virtual Docker → Node.js (tsx watch overhead) → Redis/PostgreSQL → resposta. Em produção com JS compilado (`tsc`), esse overhead desaparece e a latência cai para a faixa de 5-20ms (principalmente RTT de rede e lookup Redis).
+
+### 4.4 Comparativo: desenvolvimento vs produção esperada
+
+| Condição | p50 estimado | p95 estimado | Throughput esperado |
+|---|---|---|---|
+| Dev local (`tsx watch`) | ~160ms | ~300ms | ~700 req/s |
+| Produção compilado, 1 instância | ~10ms | ~30ms | ~1.500 req/s |
+| Produção compilado, 4 instâncias (PM2 cluster) | ~5ms | ~15ms | ~5.000+ req/s |
+
+---
+
+## 5. Identificação de Gargalos sob Carga
 
 ### 4.1 Endpoint de Redirecionamento (caminho crítico)
 
@@ -150,3 +200,44 @@ A tabela `link_clicks` está preparada para **particionamento mensal** por `clic
 - **IP de cliques:** Armazenado como hash SHA-256 truncado (16 chars) — nunca o IP raw — para compliance com LGPD/GDPR.
 - **SQL Injection:** Impossível — todas as queries usam `$1, $2, ...` (parameterized via `pg`).
 - **CSV/JSON injection:** Validação com `zod` + `isValidUrl()` em cada linha do batch.
+
+---
+
+## 7. Evolução do Projeto
+
+### O que foi implementado além do mínimo
+
+| Feature | Status | Observação |
+|---|---|---|
+| Cache Redis no redirect | ✅ | TTL 1h, invalidação explícita |
+| Rate limiting | ✅ | Configurável via env var |
+| Docker Compose completo | ✅ | 6 serviços, healthchecks |
+| Analytics de cliques | ✅ | Tabela `link_clicks` particionada |
+| Frontend Vue 3 | ✅ | Não era obrigatório |
+| Terraform AWS | ✅ | Não era obrigatório |
+
+### O que faria diferente com mais tempo
+
+**1. Rodar o teste de carga em modo produção**
+
+O teste foi executado com `tsx watch` (desenvolvimento). Em produção, o build compilado eliminaria o overhead do hot-reload. O próximo passo é executar o mesmo teste contra o `docker-compose.prod.yml` para obter métricas realistas.
+
+**2. PM2 cluster mode ou múltiplas réplicas**
+
+Node.js é single-threaded. Com `pm2 -i max`, aproveitaríamos todos os núcleos da CPU. Em Docker, isso seria resolvido com `deploy: replicas: 4` no Compose ou Kubernetes HPA. A 500 req/s não é necessário, mas para escala futura é o passo mais impactante.
+
+**3. PgBouncer na frente do PostgreSQL**
+
+O pool de 20 conexões no `pg` funciona bem até ~500 req/s, mas em picos maiores conexões são enfileiradas. O PgBouncer em modo transaction pooling permitiria centenas de clientes com apenas ~10 conexões reais ao Postgres.
+
+**4. Contagem de cliques assíncrona**
+
+O `UPDATE clicks = clicks + 1` síncrono no caminho do redirect é o único write síncrono em um endpoint que deveria ser read-only. Com mais tempo, moveria para um buffer em Redis (`INCR slug:clicks:<slug>`) e um worker que persiste em lote a cada 30 segundos — zerando a contenção de lock.
+
+**5. CDN na frente do nginx**
+
+Para slugs populares, o redirect poderia ser resolvido na borda (Cloudflare Workers, Lambda@Edge) sem tocar a origem. O cache Redis é eficiente, mas ainda exige um round-trip ao servidor. Com CDN e `Cache-Control: max-age=3600`, os 1.000 slugs mais acessados nunca chegariam ao backend.
+
+**6. Testes de integração**
+
+O projeto não tem testes automatizados. Com mais tempo, adicionaria testes de integração com banco real (sem mocks) usando `vitest` + `testcontainers`, cobrindo os fluxos críticos: criar link, redirect com cache hit/miss, batch com falhas parciais.

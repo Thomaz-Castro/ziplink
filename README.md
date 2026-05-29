@@ -194,6 +194,41 @@ Abra http://localhost:8089 → defina Users=600, Spawn rate=60 → Start.
 
 ---
 
+## Testes Unitários
+
+### Executar
+
+```bash
+cd backend
+npm test
+```
+
+### Com cobertura
+
+```bash
+npm test -- --coverage
+```
+
+### Em modo watch (durante desenvolvimento)
+
+```bash
+npm test -- --watch
+```
+
+### O que é testado
+
+| Módulo | Casos cobertos |
+|---|---|
+| `utils/url` | URLs válidas/inválidas, protocolos, normalização |
+| `utils/slug` | Geração, alfabeto, unicidade, validação, sanitização |
+| `services/AuthService` | Register (sucesso, email duplicado), Login (sucesso, senha errada, usuário inexistente), FindById |
+| `services/LinkService` | Create (slug auto/custom, URL inválida, slug reservado, retries esgotados), FindBySlug (cache hit/miss), Update, Remove, GetStats, List, RecordClick |
+| `services/BatchService` | Parse CSV/JSON (sucesso, erros de formato, limite 2000), Submit, GetStatus, ListJobs |
+
+> Os testes são unitários — banco de dados, Redis e filas são mockados. Não requerem Docker rodando.
+
+---
+
 ## Comandos Úteis
 
 ### Docker
