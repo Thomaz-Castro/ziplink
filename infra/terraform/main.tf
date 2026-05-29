@@ -139,15 +139,20 @@ resource "aws_instance" "app" {
   }
 
   user_data = base64encode(templatefile("${path.module}/user_data.sh", {
-    project_name  = var.project_name
-    docker_compose_content = file("${path.module}/../../docker-compose.prod.yml")
+    jwt_secret        = var.jwt_secret
+    postgres_password = var.postgres_password
+    base_url          = "http://${aws_eip.app.public_ip}"
   }))
 
   tags = { Name = "${var.project_name}-server" }
 }
 
 resource "aws_eip" "app" {
-  instance = aws_instance.app.id
-  domain   = "vpc"
-  tags     = { Name = "${var.project_name}-eip" }
+  domain = "vpc"
+  tags   = { Name = "${var.project_name}-eip" }
+}
+
+resource "aws_eip_association" "app" {
+  instance_id   = aws_instance.app.id
+  allocation_id = aws_eip.app.id
 }
