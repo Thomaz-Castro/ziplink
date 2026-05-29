@@ -1,14 +1,14 @@
-# ZipLink — High-Performance URL Shortener
+# ZipLink — Encurtador de URL de Alta Performance
 
 > Stack: **Fastify + TypeScript · PostgreSQL · Redis · BullMQ · Vue 3 · Docker**
 
 ---
 
-## Quick Start (< 5 minutes)
+## Início Rápido (< 5 minutos)
 
-### Prerequisites
-- Docker ≥ 24 and Docker Compose v2  
-- `git clone` this repo
+### Pré-requisitos
+- Docker ≥ 24 e Docker Compose v2  
+- `git clone` neste repositório
 
 ### 1. Configurar variáveis de ambiente
 
@@ -53,11 +53,11 @@ Tudo em **uma única porta — http://localhost** via nginx reverso:
 
 ---
 
-## API Reference
+## Referência da API
 
-All API routes are prefixed with `/api`.
+Todas as rotas da API têm o prefixo `/api`.
 
-### Authentication
+### Autenticação
 
 ```bash
 # Register
@@ -71,7 +71,7 @@ curl -X POST http://localhost/api/auth/login \
   -d '{"email":"you@example.com","password":"secret123"}'
 ```
 
-### Links CRUD
+### CRUD de Links
 
 ```bash
 TOKEN="<jwt from login>"
@@ -97,17 +97,17 @@ curl -X DELETE http://localhost/api/links/<id> \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-### Redirect
+### Redirecionamento
 
 ```
 GET http://localhost/<slug>
-→ 302 to original URL
+→ 302 para a URL original
 ```
 
-Cache-hit path: Redis only (sub-millisecond).  
-Cache-miss path: PostgreSQL → populate Redis → redirect.
+Caminho com Cache-hit: Apenas Redis (sub-milissegundo).  
+Caminho com Cache-miss: PostgreSQL → preenche Redis → redireciona.
 
-### Batch Import
+### Importação em Lote (Batch)
 
 ```bash
 # CSV format: url,slug,title
@@ -122,16 +122,16 @@ curl -X POST http://localhost/api/batch \
   -F "file=@links.csv"
 # → 202 Accepted {"job_id":"..."}
 
-# Poll job status
+# Consultar status do job
 curl http://localhost/api/batch/<job_id> \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 ---
 
-## Load Testing with Locust
+## Teste de Carga com Locust
 
-### Setup
+### Configuração
 
 ```bash
 cd tests/locust
@@ -140,7 +140,7 @@ source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Run (headless — 500+ req/s target)
+### Executar (headless — alvo de 500+ req/s)
 
 ```bash
 locust -f locustfile.py \
@@ -152,33 +152,33 @@ locust -f locustfile.py \
   --html report.html
 ```
 
-Key flags:
-- `-u 600` — 600 concurrent users
-- `-r 60` — ramp up 60 users/second
-- `-t 90s` — run for 90 seconds (60s steady state after 10s ramp)
+Principais flags:
+- `-u 600` — 600 usuários simultâneos
+- `-r 60` — adiciona 60 usuários/segundo (ramp up)
+- `-t 90s` — executa por 90 segundos (60s de estado estável após 10s de ramp up)
 
-### Run with dashboard (interactive)
+### Executar com dashboard (interativo)
 
 ```bash
 locust -f locustfile.py --host http://localhost
 ```
-Open http://localhost:8089 → set Users=600, Spawn rate=60 → Start.
+Abra http://localhost:8089 → defina Users=600, Spawn rate=60 → Start.
 
-### Expected results (local Docker, 8-core machine)
+### Resultados esperados (Docker local, máquina de 8 núcleos)
 
-| Metric           | Target       |
+| Métrica          | Alvo         |
 |------------------|--------------|
-| Requests/sec     | ≥ 500        |
-| p50 latency      | < 10 ms      |
-| p95 latency      | < 50 ms      |
-| Error rate       | < 0.1%       |
+| Requições/seg    | ≥ 500        |
+| Latência p50     | < 10 ms      |
+| Latência p95     | < 50 ms      |
+| Taxa de erro     | < 0.1%       |
 
-> If throughput is below target: scale Redis `maxmemory` up, check
-> `docker stats`, or increase `WORKER_CONCURRENCY`.
+> Se a taxa de transferência (throughput) estiver abaixo do alvo: aumente o `maxmemory` do Redis, verifique
+> os recursos usando `docker stats` ou aumente `WORKER_CONCURRENCY`.
 
 ---
 
-## Project Structure
+## Estrutura do Projeto
 
 ```
 ziplink/
@@ -209,42 +209,42 @@ ziplink/
 
 ---
 
-## Environment Variables
+## Variáveis de Ambiente
 
-| Variable              | Default                 | Description                   |
+| Variável              | Padrão                  | Descrição                     |
 |-----------------------|-------------------------|-------------------------------|
-| `DATABASE_URL`        | (postgres container)    | PostgreSQL connection string  |
-| `REDIS_URL`           | (redis container)       | Redis connection string       |
-| `JWT_SECRET`          | (set in .env)           | JWT signing key (min 32 chars)|
-| `BASE_URL`            | `http://localhost`      | Public base URL for short links|
-| `BCRYPT_ROUNDS`       | `10`                    | bcrypt cost factor            |
-| `WORKER_CONCURRENCY`  | `5`                     | Parallel batch jobs per worker|
+| `DATABASE_URL`        | (container postgres)    | String de conexão do PostgreSQL |
+| `REDIS_URL`           | (container redis)       | String de conexão do Redis    |
+| `JWT_SECRET`          | (definido no .env)      | Chave JWT (mínimo 32 caracteres)|
+| `BASE_URL`            | `http://localhost`      | URL base pública para links curtos|
+| `BCRYPT_ROUNDS`       | `10`                    | Fator de custo do bcrypt      |
+| `WORKER_CONCURRENCY`  | `5`                     | Jobs paralelos por worker     |
 
 Copie `.env.example` para `.env` — todas as variáveis já têm valores padrão para dev local.
 
 ---
 
-## Deploy to AWS (Free Tier)
+## Deploy na AWS (Nível Gratuito / Free Tier)
 
 ```bash
 cd infra/terraform
 
-# Initialise
+# Inicializar
 terraform init
 
-# Preview
+# Visualizar plano (Preview)
 terraform plan \
   -var="jwt_secret=change_me_in_production_32chars" \
   -var="postgres_password=str0ng_password"
 
-# Apply
+# Aplicar
 terraform apply \
-  -var="jwt_secret=change_me_in_production_32chars" \
-  -var="postgres_password=str0ng_password"
+  -var="jwt_secret=mude_isso_em_producao_32_chars" \
+  -var="postgres_password=senha_fort3"
 ```
 
-Terraform creates: VPC, Subnet, Security Group, EC2 t3.micro, Elastic IP.  
-The instance runs `docker compose up` on first boot via `user_data.sh`.
+O Terraform cria: VPC, Subnet, Security Group, EC2 t3.micro, Elastic IP.  
+A instância executa `docker compose up` na primeira inicialização através do `user_data.sh`.
 
-> **Free Tier note:** t3.micro gives 750 hours/month free for 12 months.
-> Elastic IP is free while attached to a running instance.
+> **Nota sobre o Nível Gratuito:** t3.micro dá 750 horas/mês gratuitas por 12 meses.
+> O Elastic IP é gratuito enquanto estiver anexado a uma instância em execução.
