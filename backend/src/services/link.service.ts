@@ -89,10 +89,12 @@ export class LinkService {
 
     const total = parseInt(countResult.rows[0].count, 10);
 
+    const orderBy = opts.sortBy === "clicks" ? "clicks DESC, created_at DESC" : "created_at DESC";
+
     const rows = await query<Link>(
       `SELECT * FROM links WHERE user_id = $1
        AND ($2::TEXT IS NULL OR original_url ILIKE $2 OR slug ILIKE $2 OR title ILIKE $2)
-       ORDER BY created_at DESC
+       ORDER BY ${orderBy}
        LIMIT $3 OFFSET $4`,
       [userId, search, limit, offset]
     );

@@ -58,13 +58,10 @@ onMounted(async () => {
   try {
     const [statsRes, linksRes] = await Promise.all([
       linksApi.stats(),
-      linksApi.list({ limit: 10 }),
+      linksApi.list({ limit: 10, sortBy: "clicks" }),
     ]);
     stats.value = statsRes.data as Stats;
-    const sorted = ((linksRes.data as { data: Link[] }).data ?? [])
-      .sort((a, b) => b.clicks - a.clicks)
-      .slice(0, 10);
-    topLinks.value = sorted;
+    topLinks.value = (linksRes.data as { data: Link[] }).data ?? [];
   } finally {
     loading.value = false;
   }
