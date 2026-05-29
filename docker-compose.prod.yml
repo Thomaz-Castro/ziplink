@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ziplink
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ziplink_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/config/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ziplink -d ziplink_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy noeviction
+    volumes:
+      - redis_data:/data
+
+  api:
+    build:
+      context: ./backend
+      target: production
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://ziplink:${POSTGRES_PASSWORD}@postgres:5432/ziplink_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      BASE_URL: ${BASE_URL:-http://localhost}
+      BCRYPT_ROUNDS: "12"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_started }
+
+  worker:
+    build:
+      context: ./backend
+      target: production
+    restart: always
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://ziplink:${POSTGRES_PASSWORD}@postgres:5432/ziplink_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      BASE_URL: ${BASE_URL:-http://localhost}
+      WORKER_CONCURRENCY: "10"
+    command: node dist/workers/index.js
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_started }
+
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+    restart: always
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:
