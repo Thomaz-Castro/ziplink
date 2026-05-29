@@ -41,8 +41,8 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await app.register(fastifyRateLimit, {
     global: true,
-    max: 500,
-    timeWindow: "1 minute",
+    max: env.RATE_LIMIT_MAX,
+    timeWindow: env.RATE_LIMIT_WINDOW_SECONDS * 1000,
     skipOnError: true,
     keyGenerator: (req) => req.ip,
   });

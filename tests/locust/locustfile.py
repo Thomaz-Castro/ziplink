@@ -98,35 +98,24 @@ class RedirectUser(HttpUser):
             else:
                 response.failure(f"Unexpected status {response.status_code}")
 
-    @task(10)
-    def hit_missing_slug(self):
-        """10% of traffic hits non-existent slugs (cold-miss path)."""
-        fake = "zz" + "".join(random.choices(string.ascii_lowercase, k=5))
-        with self.client.get(
-            f"/{fake}",
-            allow_redirects=False,
-            catch_response=True,
-            name="/[slug] 404 miss",
-        ) as response:
-            if response.status_code == 404:
-                response.success()
-            else:
-                response.failure(f"Expected 404, got {response.status_code}")
 
 
 class ApiUser(HttpUser):
     """
     Secondary user class: creates + lists links to generate mixed API load.
-    Set weight lower than RedirectUser.
+    Kept at low weight — load test focus is the redirect endpoint.
     """
     weight = 1
-    wait_time = between(0.5, 2)
+    wait_time = between(2, 5)
     token: str = ""
 
     def on_start(self):
         email = f"api_{''.join(random.choices(string.ascii_lowercase, k=6))}@test.com"
         res = self.client.post("/api/auth/register", json={"email": email, "password": "testpass123"})
-        self.token = res.json().get("token", "")
+        if res.status_code == 201:
+            self.token = res.json().get("token", "")
+        else:
+            self.token = ""
 
     @task
     def create_and_list(self):

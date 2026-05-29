@@ -15,5 +15,7 @@ terraform.tfstate.backup
 !example.tfvars
 __pycache__/
 *.pyc
+.venv/
 .locust_history
-report.html
+*.html
+tests/locust/results*

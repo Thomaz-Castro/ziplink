@@ -9,6 +9,8 @@ const envSchema = z.object({
   BASE_URL: z.string().url().default("http://localhost"),
   BCRYPT_ROUNDS: z.coerce.number().default(10),
   WORKER_CONCURRENCY: z.coerce.number().default(5),
+  RATE_LIMIT_MAX: z.coerce.number().default(500),
+  RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().default(60),
 });
 
 const parsed = envSchema.safeParse(process.env);

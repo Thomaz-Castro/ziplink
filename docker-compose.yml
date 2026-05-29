@@ -52,6 +52,8 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       BASE_URL: ${BASE_URL}
       BCRYPT_ROUNDS: ${BCRYPT_ROUNDS}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-500}
+      RATE_LIMIT_WINDOW_SECONDS: ${RATE_LIMIT_WINDOW_SECONDS:-60}
     volumes:
       - ./backend/src:/app/src
       - ./backend/uploads:/app/uploads
