@@ -71,4 +71,9 @@ async function handleRegister(): Promise<void> {
 .field { margin-bottom: 1rem; }
 .field label { display: block; font-size: .85rem; font-weight: 500; margin-bottom: .35rem; }
 .auth-footer { text-align: center; margin-top: 1rem; font-size: .9rem; color: var(--text-muted); }
+
+@media (max-width: 480px) {
+  .auth-page { align-items: flex-start; padding-top: 2rem; }
+  .auth-card { border-radius: 0; border-left: none; border-right: none; box-shadow: none; }
+}
 </style>

@@ -269,4 +269,12 @@ onUnmounted(() => {
   margin-top: .25rem;
 }
 .btn-sm { padding: .25rem .6rem; font-size: .75rem; }
+
+/* ── Mobile ─────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .drop-zone { padding: 1.5rem 1rem; }
+  .job-stats { gap: .75rem; }
+  .job-header { flex-wrap: wrap; }
+  .results-overflow { flex-direction: column; align-items: flex-start; gap: .4rem; }
+}
 </style>

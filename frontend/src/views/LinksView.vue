@@ -315,4 +315,36 @@ tr:hover td { background: var(--surface-2); }
   display: flex; align-items: center; justify-content: center; gap: 1rem;
   margin-top: 1rem; font-size: .9rem;
 }
+
+/* ── Mobile ─────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .page-header { flex-wrap: wrap; gap: .5rem; }
+  .search-bar input { max-width: 100%; }
+  .filters-bar { gap: .6rem; }
+
+  /* Modal full-screen */
+  .modal-backdrop { align-items: flex-end; }
+  .modal {
+    max-width: 100%;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Esconde colunas menos importantes */
+  th:nth-child(2), td:nth-child(2),
+  th:nth-child(5), td:nth-child(5) { display: none; }
+
+  th, td { padding: .5rem .6rem; font-size: .8rem; }
+
+  .actions { flex-direction: column; gap: .25rem; }
+  .actions .btn { font-size: .72rem; padding: .2rem .4rem; }
+  .url-cell { max-width: 120px; }
+}
+
+@media (max-width: 480px) {
+  /* Esconde também cliques em telas muito pequenas */
+  th:nth-child(3), td:nth-child(3) { display: none; }
+}
 </style>

@@ -95,4 +95,63 @@ function handleLogout(): void {
 .logout:hover { background: #fee2e2; }
 
 .content { flex: 1; padding: 2rem; overflow-y: auto; height: 100vh; }
+
+/* ── Mobile: sidebar → bottom nav ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .sidebar {
+    order: 2;
+    width: 100%;
+    height: 56px;
+    min-height: 56px;
+    flex-direction: row;
+    align-items: center;
+    padding: 0 .5rem;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 -2px 8px rgba(0,0,0,.07);
+  }
+
+  .sidebar-brand { display: none; }
+
+  nav { display: flex; flex: 1; height: 100%; }
+
+  .nav-item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: .4rem .25rem;
+    font-size: .72rem;
+    height: 100%;
+  }
+
+  .logout {
+    order: 2;
+    margin-top: 0;
+    flex: 0 0 auto;
+    padding: .4rem .75rem;
+    font-size: .72rem;
+    border: none;
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+
+  .content {
+    order: 1;
+    flex: 1;
+    height: 0;
+    min-height: 0;
+    padding: 1rem;
+    overflow-y: auto;
+  }
+}
 </style>

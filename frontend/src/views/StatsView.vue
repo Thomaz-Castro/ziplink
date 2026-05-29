@@ -75,4 +75,9 @@ onMounted(async () => {
 .stat-value { font-size: 2.5rem; font-weight: 700; color: var(--brand); }
 .stat-label { font-size: .875rem; color: var(--text-muted); margin-top: .25rem; }
 .empty-state { text-align: center; padding: 2rem; color: var(--text-muted); }
+
+@media (max-width: 640px) {
+  .stats-grid { grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+  .stat-value { font-size: 1.8rem; }
+}
 </style>
