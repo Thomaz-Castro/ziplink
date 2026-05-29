@@ -75,10 +75,16 @@
         </button>
 
         <div v-if="expandedJob === job.id" class="results-list">
-          <div v-for="r in failedResults(job)" :key="r.line" class="result-row">
+          <div v-for="r in failedResults(job).slice(0, 7)" :key="r.line" class="result-row">
             <span class="result-line">Line {{ r.line }}</span>
             <span class="result-url">{{ r.url }}</span>
             <span class="result-error">{{ r.error }}</span>
+          </div>
+          <div v-if="failedResults(job).length > 7" class="results-overflow">
+            <span>+{{ failedResults(job).length - 7 }} more errors</span>
+            <button class="btn btn-ghost btn-sm" @click="downloadErrorReport(job)">
+              Download full report (.csv)
+            </button>
           </div>
         </div>
       </div>
@@ -147,7 +153,13 @@ async function submitBatch(): Promise<void> {
 
 async function fetchJobs(): Promise<void> {
   const res = await batchApi.list();
-  jobs.value = res.data as BatchJob[];
+  const fresh = res.data as BatchJob[];
+  jobs.value = fresh.map((freshJob) => {
+    const existing = jobs.value.find((j) => j.id === freshJob.id);
+    return existing?.results?.length
+      ? { ...freshJob, results: existing.results }
+      : freshJob;
+  });
 }
 
 function progressPct(job: BatchJob): number {
@@ -169,8 +181,28 @@ function failedResults(job: BatchJob): BatchResult[] {
   return (job.results ?? []).filter((r) => r.status === "error");
 }
 
-function toggleResults(id: string): void {
-  expandedJob.value = expandedJob.value === id ? null : id;
+function downloadErrorReport(job: BatchJob): void {
+  const rows = failedResults(job);
+  const lines = ["line,url,error", ...rows.map((r) => `${r.line},"${r.url}","${r.error}"`)];
+  const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `errors_${job.id.slice(0, 8)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+async function toggleResults(id: string): Promise<void> {
+  if (expandedJob.value === id) {
+    expandedJob.value = null;
+    return;
+  }
+  expandedJob.value = id;
+  const job = jobs.value.find((j) => j.id === id);
+  if (job && !job.results?.length) {
+    const res = await batchApi.status(id);
+    job.results = (res.data as BatchJob).results ?? [];
+  }
 }
 
 function formatDate(iso: string): string {
@@ -228,4 +260,16 @@ onUnmounted(() => {
 .result-line { color: var(--text-muted); min-width: 60px; }
 .result-url { flex: 1; color: var(--text); word-break: break-all; }
 .result-error { color: var(--danger); }
+
+.results-overflow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .6rem 0;
+  font-size: .8rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  margin-top: .25rem;
+}
+.btn-sm { padding: .25rem .6rem; font-size: .75rem; }
 </style>
