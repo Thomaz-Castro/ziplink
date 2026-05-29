@@ -1,33 +1,33 @@
 <template>
   <div>
-    <h2 style="font-size:1.4rem;font-weight:700;margin-bottom:1.5rem">Statistics</h2>
+    <h2 style="font-size:1.4rem;font-weight:700;margin-bottom:1.5rem">{{ t.stats.title }}</h2>
 
-    <div v-if="loading" class="empty-state">Loading…</div>
+    <div v-if="loading" class="empty-state">{{ t.common.loading }}</div>
 
     <div v-else class="stats-grid">
       <div class="card stat-card">
         <div class="stat-value">{{ stats.total_links }}</div>
-        <div class="stat-label">Total Links</div>
+        <div class="stat-label">{{ t.stats.totalLinks }}</div>
       </div>
       <div class="card stat-card">
         <div class="stat-value">{{ stats.active_links }}</div>
-        <div class="stat-label">Active Links</div>
+        <div class="stat-label">{{ t.stats.activeLinks }}</div>
       </div>
       <div class="card stat-card accent">
         <div class="stat-value">{{ Number(stats.total_clicks).toLocaleString() }}</div>
-        <div class="stat-label">Total Clicks</div>
+        <div class="stat-label">{{ t.stats.totalClicks }}</div>
       </div>
     </div>
 
     <div style="margin-top:2rem" class="card">
-      <h3 style="margin-bottom:1rem">Top Links by Clicks</h3>
-      <div v-if="topLinks.length === 0" class="empty-state">No links yet.</div>
+      <h3 style="margin-bottom:1rem">{{ t.stats.topLinksTitle }}</h3>
+      <div v-if="topLinks.length === 0" class="empty-state">{{ t.stats.emptyState }}</div>
       <table v-else style="width:100%;border-collapse:collapse">
         <thead>
           <tr>
-            <th style="text-align:left;padding:.5rem;border-bottom:1px solid var(--border)">Slug</th>
-            <th style="text-align:left;padding:.5rem;border-bottom:1px solid var(--border)">Title</th>
-            <th style="text-align:right;padding:.5rem;border-bottom:1px solid var(--border)">Clicks</th>
+            <th style="text-align:left;padding:.5rem;border-bottom:1px solid var(--border)">{{ t.stats.tableSlug }}</th>
+            <th style="text-align:left;padding:.5rem;border-bottom:1px solid var(--border)">{{ t.stats.tableTitle }}</th>
+            <th style="text-align:right;padding:.5rem;border-bottom:1px solid var(--border)">{{ t.stats.tableClicks }}</th>
           </tr>
         </thead>
         <tbody>
@@ -45,6 +45,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { linksApi } from "../api/client";
+import t from "../i18n";
 
 interface Stats { total_links: string; active_links: string; total_clicks: string; }
 interface Link { id: string; slug: string; original_url: string; title: string | null; clicks: number; }

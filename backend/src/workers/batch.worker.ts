@@ -22,7 +22,7 @@ async function generateUniqueSlug(client: PoolClient): Promise<string> {
     const exists = await client.query(`SELECT 1 FROM links WHERE slug = $1`, [candidate]);
     if (!exists.rows[0]) return candidate;
   }
-  throw new Error("Slug generation failed");
+  throw new Error("Falha ao gerar slug único — tente novamente");
 }
 
 export function createBatchWorker(): Worker {
@@ -53,12 +53,12 @@ export function createBatchWorker(): Worker {
               const lineNumber = chunkStart + i + 1;
 
               if (!isValidUrl(entry.url)) {
-                batchResults.push({ line: lineNumber, url: entry.url, status: "error", error: "Invalid URL" });
+                batchResults.push({ line: lineNumber, url: entry.url, status: "error", error: "URL inválida" });
                 continue;
               }
 
               if (entry.slug && !isValidSlug(entry.slug)) {
-                batchResults.push({ line: lineNumber, url: entry.url, status: "error", error: "Invalid slug format" });
+                batchResults.push({ line: lineNumber, url: entry.url, status: "error", error: "Formato de slug inválido" });
                 continue;
               }
 
@@ -69,7 +69,7 @@ export function createBatchWorker(): Worker {
                 if (entry.slug) {
                   const exists = await client.query(`SELECT 1 FROM links WHERE slug = $1`, [slug]);
                   if (exists.rows[0]) {
-                    batchResults.push({ line: lineNumber, url: entry.url, status: "error", error: `Slug '${slug}' already exists` });
+                    batchResults.push({ line: lineNumber, url: entry.url, status: "error", error: `Slug '${slug}' já existe` });
                     continue;
                   }
                 }
@@ -101,7 +101,7 @@ export function createBatchWorker(): Worker {
           failureCount += chunkResults.filter((r) => r.status === "error").length;
         } catch (err) {
           // Whole chunk failed (transaction rollback)
-          const message = err instanceof Error ? err.message : "Batch chunk failed";
+          const message = err instanceof Error ? err.message : "Falha no processamento do lote";
           for (let i = 0; i < chunk.length; i++) {
             results.push({ line: chunkStart + i + 1, url: chunk[i].url, status: "error", error: message });
           }

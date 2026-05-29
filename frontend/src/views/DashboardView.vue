@@ -7,16 +7,16 @@
       </div>
       <nav>
         <RouterLink to="/links" class="nav-item" active-class="active">
-          <span>Links</span>
+          <span>{{ t.nav.links }}</span>
         </RouterLink>
         <RouterLink to="/batch" class="nav-item" active-class="active">
-          <span>Batch Import</span>
+          <span>{{ t.nav.batch }}</span>
         </RouterLink>
         <RouterLink to="/stats" class="nav-item" active-class="active">
-          <span>Stats</span>
+          <span>{{ t.nav.stats }}</span>
         </RouterLink>
       </nav>
-      <button class="nav-item logout" @click="handleLogout">Logout</button>
+      <button class="nav-item logout" @click="handleLogout">{{ t.nav.logout }}</button>
     </aside>
 
     <main class="content">
@@ -28,6 +28,7 @@
 <script setup lang="ts">
 import { useAuthStore } from "../stores/auth";
 import { useRouter } from "vue-router";
+import t from "../i18n";
 
 const auth = useAuthStore();
 const router = useRouter();

@@ -1,41 +1,41 @@
 <template>
   <div>
     <div class="page-header">
-      <h2>My Links</h2>
-      <button class="btn btn-primary" @click="showCreate = true">+ New Link</button>
+      <h2>{{ t.links.title }}</h2>
+      <button class="btn btn-primary" @click="showCreate = true">{{ t.links.newLink }}</button>
     </div>
 
     <!-- Search -->
     <div class="search-bar">
-      <input v-model="search" type="text" placeholder="Search by URL, slug or title…" @input="debouncedFetch" />
+      <input v-model="search" type="text" :placeholder="t.links.searchPlaceholder" @input="debouncedFetch" />
     </div>
 
     <!-- Create / Edit Modal -->
     <div v-if="showCreate || editingLink" class="modal-backdrop" @click.self="closeModal">
       <div class="card modal">
-        <h3>{{ editingLink ? "Edit Link" : "New Link" }}</h3>
+        <h3>{{ editingLink ? t.links.modal.editTitle : t.links.modal.createTitle }}</h3>
         <form @submit.prevent="handleSave">
           <div class="field">
-            <label>Original URL *</label>
-            <input v-model="form.original_url" type="url" placeholder="https://example.com/very-long-path" required />
+            <label>{{ t.links.modal.urlLabel }}</label>
+            <input v-model="form.original_url" type="url" :placeholder="t.links.modal.urlPlaceholder" required />
           </div>
           <div class="field">
-            <label>Custom Slug <small>(optional, 3–20 chars)</small></label>
-            <input v-model="form.slug" type="text" placeholder="my-link" maxlength="20" />
+            <label>{{ t.links.modal.slugLabel }} <small>({{ t.links.modal.slugHint }})</small></label>
+            <input v-model="form.slug" type="text" :placeholder="t.links.modal.slugPlaceholder" maxlength="20" />
           </div>
           <div class="field">
-            <label>Title <small>(optional)</small></label>
-            <input v-model="form.title" type="text" placeholder="Descriptive title" maxlength="512" />
+            <label>{{ t.links.modal.titleLabel }} <small>({{ t.links.modal.titleHint }})</small></label>
+            <input v-model="form.title" type="text" :placeholder="t.links.modal.titlePlaceholder" maxlength="512" />
           </div>
           <div class="field">
-            <label>Expires At <small>(optional)</small></label>
+            <label>{{ t.links.modal.expiresLabel }} <small>({{ t.links.modal.expiresHint }})</small></label>
             <input v-model="form.expires_at" type="datetime-local" />
           </div>
           <p v-if="formError" class="error-msg">{{ formError }}</p>
           <div class="modal-actions">
-            <button type="button" class="btn btn-ghost" @click="closeModal">Cancel</button>
+            <button type="button" class="btn btn-ghost" @click="closeModal">{{ t.common.cancel }}</button>
             <button type="submit" class="btn btn-primary" :disabled="saving">
-              {{ saving ? "Saving…" : (editingLink ? "Update" : "Create") }}
+              {{ saving ? t.common.saving : (editingLink ? t.common.update : t.common.create) }}
             </button>
           </div>
         </form>
@@ -43,22 +43,22 @@
     </div>
 
     <!-- Links table -->
-    <div v-if="loading" class="empty-state">Loading…</div>
+    <div v-if="loading" class="empty-state">{{ t.common.loading }}</div>
 
     <div v-else-if="links.length === 0" class="empty-state card">
-      <p>No links yet. Create your first shortened link!</p>
+      <p>{{ t.links.emptyState }}</p>
     </div>
 
     <div v-else class="links-table card">
       <table>
         <thead>
           <tr>
-            <th>Short URL</th>
-            <th>Destination</th>
-            <th>Clicks</th>
-            <th>Status</th>
-            <th>Created</th>
-            <th>Actions</th>
+            <th>{{ t.links.table.shortUrl }}</th>
+            <th>{{ t.links.table.destination }}</th>
+            <th>{{ t.links.table.clicks }}</th>
+            <th>{{ t.links.table.status }}</th>
+            <th>{{ t.links.table.createdAt }}</th>
+            <th>{{ t.links.table.actions }}</th>
           </tr>
         </thead>
         <tbody>
@@ -67,19 +67,19 @@
               <a :href="`${baseUrl}/${link.slug}`" target="_blank" class="slug-link">
                 {{ link.slug }}
               </a>
-              <button class="copy-btn" @click="copyToClipboard(`${baseUrl}/${link.slug}`)" title="Copy">⎘</button>
+              <button class="copy-btn" @click="copyToClipboard(`${baseUrl}/${link.slug}`)" title="Copiar">⎘</button>
             </td>
             <td class="url-cell" :title="link.original_url">{{ truncate(link.original_url, 50) }}</td>
             <td>{{ link.clicks.toLocaleString() }}</td>
             <td>
               <span :class="link.active ? 'badge badge-green' : 'badge badge-red'">
-                {{ link.active ? "Active" : "Inactive" }}
+                {{ link.active ? t.links.table.active : t.links.table.inactive }}
               </span>
             </td>
             <td>{{ formatDate(link.created_at) }}</td>
             <td class="actions">
-              <button class="btn btn-ghost" style="padding:.25rem .6rem;font-size:.8rem" @click="startEdit(link)">Edit</button>
-              <button class="btn btn-danger" style="padding:.25rem .6rem;font-size:.8rem" @click="removeLink(link.id)">Delete</button>
+              <button class="btn btn-ghost" style="padding:.25rem .6rem;font-size:.8rem" @click="startEdit(link)">{{ t.common.edit }}</button>
+              <button class="btn btn-danger" style="padding:.25rem .6rem;font-size:.8rem" @click="removeLink(link.id)">{{ t.common.delete }}</button>
             </td>
           </tr>
         </tbody>
@@ -88,9 +88,9 @@
 
     <!-- Pagination -->
     <div v-if="total > limit" class="pagination">
-      <button class="btn btn-ghost" :disabled="page === 1" @click="page--; fetchLinks()">Prev</button>
-      <span>Page {{ page }} / {{ totalPages }}</span>
-      <button class="btn btn-ghost" :disabled="page >= totalPages" @click="page++; fetchLinks()">Next</button>
+      <button class="btn btn-ghost" :disabled="page === 1" @click="page--; fetchLinks()">{{ t.links.pagination.prev }}</button>
+      <span>{{ t.links.pagination.page(page, totalPages) }}</span>
+      <button class="btn btn-ghost" :disabled="page >= totalPages" @click="page++; fetchLinks()">{{ t.links.pagination.next }}</button>
     </div>
   </div>
 </template>
@@ -98,6 +98,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { linksApi } from "../api/client";
+import t from "../i18n";
 
 interface Link {
   id: string;
@@ -177,14 +178,14 @@ async function handleSave(): Promise<void> {
     fetchLinks();
   } catch (err: unknown) {
     const e = err as { response?: { data?: { error?: string } } };
-    formError.value = e?.response?.data?.error ?? "Failed to save link";
+    formError.value = e?.response?.data?.error ?? t.links.saveErrorFallback;
   } finally {
     saving.value = false;
   }
 }
 
 async function removeLink(id: string): Promise<void> {
-  if (!confirm("Delete this link? All analytics will be lost.")) return;
+  if (!confirm(t.links.deleteConfirm)) return;
   await linksApi.remove(id);
   fetchLinks();
 }

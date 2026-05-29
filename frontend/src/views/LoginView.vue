@@ -2,27 +2,27 @@
   <div class="auth-page">
     <div class="card auth-card">
       <h1 class="auth-title">ZipLink</h1>
-      <p class="auth-subtitle">Sign in to your account</p>
+      <p class="auth-subtitle">{{ t.auth.login.subtitle }}</p>
 
       <form @submit.prevent="handleLogin">
         <div class="field">
-          <label>Email</label>
-          <input v-model="email" type="email" placeholder="you@example.com" required autofocus />
+          <label>{{ t.auth.emailLabel }}</label>
+          <input v-model="email" type="email" :placeholder="t.auth.emailPlaceholder" required autofocus />
         </div>
         <div class="field">
-          <label>Password</label>
+          <label>{{ t.auth.passwordLabel }}</label>
           <input v-model="password" type="password" placeholder="••••••••" required />
         </div>
 
         <p v-if="error" class="error-msg">{{ error }}</p>
 
         <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.5rem" :disabled="loading">
-          {{ loading ? "Signing in…" : "Sign In" }}
+          {{ loading ? t.auth.login.submitting : t.auth.login.submit }}
         </button>
       </form>
 
       <p class="auth-footer">
-        Don't have an account? <RouterLink to="/register">Register</RouterLink>
+        {{ t.auth.login.footer }} <RouterLink to="/register">{{ t.auth.login.footerLink }}</RouterLink>
       </p>
     </div>
   </div>
@@ -32,6 +32,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
+import t from "../i18n";
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -49,7 +50,7 @@ async function handleLogin(): Promise<void> {
     router.push("/links");
   } catch (err: unknown) {
     const e = err as { response?: { data?: { error?: string } } };
-    error.value = e?.response?.data?.error ?? "Login failed";
+    error.value = e?.response?.data?.error ?? t.auth.login.errorFallback;
   } finally {
     loading.value = false;
   }

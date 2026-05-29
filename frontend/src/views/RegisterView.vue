@@ -2,27 +2,27 @@
   <div class="auth-page">
     <div class="card auth-card">
       <h1 class="auth-title">ZipLink</h1>
-      <p class="auth-subtitle">Create your account</p>
+      <p class="auth-subtitle">{{ t.auth.register.subtitle }}</p>
 
       <form @submit.prevent="handleRegister">
         <div class="field">
-          <label>Email</label>
-          <input v-model="email" type="email" placeholder="you@example.com" required />
+          <label>{{ t.auth.emailLabel }}</label>
+          <input v-model="email" type="email" :placeholder="t.auth.emailPlaceholder" required />
         </div>
         <div class="field">
-          <label>Password <small>(min 8 chars)</small></label>
+          <label>{{ t.auth.passwordLabel }} <small>({{ t.auth.passwordHint }})</small></label>
           <input v-model="password" type="password" placeholder="••••••••" required minlength="8" />
         </div>
 
         <p v-if="error" class="error-msg">{{ error }}</p>
 
         <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.5rem" :disabled="loading">
-          {{ loading ? "Creating account…" : "Create Account" }}
+          {{ loading ? t.auth.register.submitting : t.auth.register.submit }}
         </button>
       </form>
 
       <p class="auth-footer">
-        Already have an account? <RouterLink to="/login">Sign in</RouterLink>
+        {{ t.auth.register.footer }} <RouterLink to="/login">{{ t.auth.register.footerLink }}</RouterLink>
       </p>
     </div>
   </div>
@@ -32,6 +32,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
+import t from "../i18n";
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -49,7 +50,7 @@ async function handleRegister(): Promise<void> {
     router.push("/links");
   } catch (err: unknown) {
     const e = err as { response?: { data?: { error?: string } } };
-    error.value = e?.response?.data?.error ?? "Registration failed";
+    error.value = e?.response?.data?.error ?? t.auth.register.errorFallback;
   } finally {
     loading.value = false;
   }

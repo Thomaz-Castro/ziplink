@@ -1,17 +1,13 @@
 <template>
   <div>
     <div class="page-header">
-      <h2>Batch Import</h2>
+      <h2>{{ t.batch.title }}</h2>
     </div>
 
     <!-- Upload area -->
     <div class="card upload-card">
-      <h3>Upload CSV or JSON</h3>
-      <p class="hint">
-        Accepts <strong>.csv</strong> (columns: <code>url, slug, title</code>) or
-        <strong>.json</strong> (array of <code>{"{"}"url","slug","title"{"}"}</code> objects).
-        Maximum <strong>2,000 URLs</strong> per file.
-      </p>
+      <h3>{{ t.batch.uploadTitle }}</h3>
+      <p class="hint" v-html="t.batch.uploadHint(2000)" />
 
       <div
         class="drop-zone"
@@ -27,30 +23,30 @@
           <p class="file-size">{{ formatSize(selectedFile.size) }}</p>
         </div>
         <div v-else>
-          <p>Drop file here or <strong>click to browse</strong></p>
-          <p style="font-size:.8rem;color:var(--text-muted);margin-top:.25rem">CSV or JSON, max 5 MB</p>
+          <p>{{ t.batch.dropZonePrompt }} <strong>{{ t.batch.dropZoneBrowse }}</strong></p>
+          <p style="font-size:.8rem;color:var(--text-muted);margin-top:.25rem">{{ t.batch.dropZoneHint }}</p>
         </div>
       </div>
 
       <p v-if="uploadError" class="error-msg">{{ uploadError }}</p>
 
       <button class="btn btn-primary" :disabled="!selectedFile || uploading" @click="submitBatch" style="margin-top:1rem">
-        {{ uploading ? "Uploading…" : "Submit Batch" }}
+        {{ uploading ? t.batch.submitting : t.batch.submit }}
       </button>
     </div>
 
     <!-- Job list -->
     <div style="margin-top:2rem">
-      <h3 style="margin-bottom:1rem">Import Jobs</h3>
+      <h3 style="margin-bottom:1rem">{{ t.batch.jobs.title }}</h3>
 
       <div v-if="jobs.length === 0" class="empty-state card">
-        <p>No import jobs yet.</p>
+        <p>{{ t.batch.jobs.emptyState }}</p>
       </div>
 
       <div v-for="job in jobs" :key="job.id" class="card job-card">
         <div class="job-header">
           <span class="job-id">{{ job.id.slice(0, 8) }}…</span>
-          <span :class="statusClass(job.status)">{{ job.status }}</span>
+          <span :class="statusClass(job.status)">{{ t.batch.status[job.status as keyof typeof t.batch.status] ?? job.status }}</span>
           <span style="color:var(--text-muted);font-size:.8rem;margin-left:auto">{{ formatDate(job.created_at) }}</span>
         </div>
 
@@ -59,10 +55,10 @@
         </div>
 
         <div class="job-stats">
-          <span>Total: {{ job.total }}</span>
-          <span class="success">Success: {{ job.success_count }}</span>
-          <span class="fail">Failed: {{ job.failure_count }}</span>
-          <span>Processed: {{ job.processed }}</span>
+          <span>{{ t.batch.jobs.total }}: {{ job.total }}</span>
+          <span class="success">{{ t.batch.jobs.success }}: {{ job.success_count }}</span>
+          <span class="fail">{{ t.batch.jobs.failed }}: {{ job.failure_count }}</span>
+          <span>{{ t.batch.jobs.processed }}: {{ job.processed }}</span>
         </div>
 
         <button
@@ -71,19 +67,19 @@
           style="font-size:.8rem;margin-top:.75rem"
           @click="toggleResults(job.id)"
         >
-          {{ expandedJob === job.id ? "Hide" : "Show" }} failed rows
+          {{ expandedJob === job.id ? t.batch.jobs.hideFailed : t.batch.jobs.showFailed }}
         </button>
 
         <div v-if="expandedJob === job.id" class="results-list">
           <div v-for="r in failedResults(job).slice(0, 7)" :key="r.line" class="result-row">
-            <span class="result-line">Line {{ r.line }}</span>
+            <span class="result-line">{{ t.batch.jobs.linePrefix }} {{ r.line }}</span>
             <span class="result-url">{{ r.url }}</span>
             <span class="result-error">{{ r.error }}</span>
           </div>
           <div v-if="failedResults(job).length > 7" class="results-overflow">
-            <span>+{{ failedResults(job).length - 7 }} more errors</span>
+            <span>{{ t.batch.jobs.moreErrors(failedResults(job).length - 7) }}</span>
             <button class="btn btn-ghost btn-sm" @click="downloadErrorReport(job)">
-              Download full report (.csv)
+              {{ t.batch.jobs.downloadReport }}
             </button>
           </div>
         </div>
@@ -95,6 +91,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import { batchApi } from "../api/client";
+import t from "../i18n";
 
 interface BatchResult {
   line: number;
@@ -145,7 +142,7 @@ async function submitBatch(): Promise<void> {
     fetchJobs();
   } catch (err: unknown) {
     const e = err as { response?: { data?: { error?: string } } };
-    uploadError.value = e?.response?.data?.error ?? "Upload failed";
+    uploadError.value = e?.response?.data?.error ?? t.batch.uploadErrorFallback;
   } finally {
     uploading.value = false;
   }
