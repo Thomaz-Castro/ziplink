@@ -1,0 +1,293 @@
+{
+  "info": {
+    "name": "ZipLink API",
+    "description": "Encurtador de URLs de alta performance — Fastify + PostgreSQL + Redis",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost", "type": "string" },
+    { "key": "token",   "value": "",                 "type": "string" },
+    { "key": "linkId",  "value": "",                 "type": "string" },
+    { "key": "jobId",   "value": "",                 "type": "string" },
+    { "key": "slug",    "value": "",                 "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "  console.log('Token salvo:', json.token.slice(0, 20) + '...');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"dev@ziplink.com\",\n  \"password\": \"senha1234\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "  console.log('Token salvo:', json.token.slice(0, 20) + '...');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"dev@ziplink.com\",\n  \"password\": \"senha1234\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Me (perfil autenticado)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Links",
+      "item": [
+        {
+          "name": "Listar links",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/links?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "links"],
+              "query": [
+                { "key": "page",     "value": "1" },
+                { "key": "limit",    "value": "20" },
+                { "key": "search",   "value": "",     "disabled": true },
+                { "key": "active",   "value": "true", "disabled": true },
+                { "key": "sortBy",   "value": "clicks", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Criar link (slug automático)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('linkId', json.id);",
+                  "  pm.collectionVariables.set('slug', json.slug);",
+                  "  console.log('Link criado — slug:', json.slug);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/links",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"original_url\": \"https://example.com/artigo-muito-longo\",\n  \"title\": \"Artigo de exemplo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Criar link (slug customizado)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/links",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"original_url\": \"https://example.com/pagina\",\n  \"slug\": \"meu-link\",\n  \"title\": \"Meu link customizado\",\n  \"expires_at\": \"2026-12-31T23:59:59.000Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Atualizar link",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/links/{{linkId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Título atualizado\",\n  \"active\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Pausar link",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/links/{{linkId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Remover expiração",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/links/{{linkId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expires_at\": null\n}"
+            }
+          }
+        },
+        {
+          "name": "Excluir link",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/links/{{linkId}}"
+          }
+        },
+        {
+          "name": "Estatísticas do usuário",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/links/stats"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Redirecionamento",
+      "item": [
+        {
+          "name": "Redirecionar por slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/{{slug}}",
+            "description": "Retorna 302 para a URL original. Use a variável {{slug}} ou substitua por um slug real."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Importação em Lote",
+      "item": [
+        {
+          "name": "Enviar arquivo CSV",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 202) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('jobId', json.id);",
+                  "  console.log('Job criado:', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/batch",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Arquivo .csv ou .json com até 2.000 URLs"
+                }
+              ]
+            },
+            "description": "Colunas CSV: url, slug (opcional), title (opcional).\nFormato JSON: array de objetos { url, slug?, title? }."
+          }
+        },
+        {
+          "name": "Consultar status do job",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/batch/{{jobId}}"
+          }
+        },
+        {
+          "name": "Listar jobs do usuário",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/batch"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sistema",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health"
+          }
+        }
+      ]
+    }
+  ]
+}
