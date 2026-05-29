@@ -76,24 +76,39 @@ curl -X POST http://localhost/api/auth/login \
 ```bash
 TOKEN="<jwt from login>"
 
-# Create
+# Criar
 curl -X POST http://localhost/api/links \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"original_url":"https://example.com/very-long-path","slug":"myslug","title":"My Link"}'
+  -d '{"original_url":"https://example.com/path","slug":"meu-link","title":"Meu Link"}'
 
-# List
-curl http://localhost/api/links \
+# Listar (suporta filtros via query string)
+curl "http://localhost/api/links?page=1&limit=20" \
   -H "Authorization: Bearer $TOKEN"
 
-# Update
+# Filtros disponíveis:
+#   search=texto        busca em URL, slug e título
+#   active=true|false   filtra por status
+#   sortBy=created_at|clicks  ordenação
+
+# Pausar / Ativar
 curl -X PATCH http://localhost/api/links/<id> \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"active":false}'
 
-# Delete
+# Remover expiração
+curl -X PATCH http://localhost/api/links/<id> \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"expires_at":null}'
+
+# Excluir
 curl -X DELETE http://localhost/api/links/<id> \
+  -H "Authorization: Bearer $TOKEN"
+
+# Estatísticas do usuário
+curl http://localhost/api/links/stats \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -126,6 +141,26 @@ curl -X POST http://localhost/api/batch \
 curl http://localhost/api/batch/<job_id> \
   -H "Authorization: Bearer $TOKEN"
 ```
+
+---
+
+## Collection Postman
+
+Importe o arquivo `ziplink.postman_collection.json` no Postman para ter todos os endpoints prontos.
+
+**Postman** → Import → selecione `ziplink.postman_collection.json`
+
+Variáveis da collection:
+
+| Variável    | Preenchimento         | Descrição                      |
+|-------------|----------------------|-------------------------------|
+| `baseUrl`   | Manual               | URL base (padrão: `http://localhost`) |
+| `token`     | Automático           | Salvo após Register ou Login  |
+| `linkId`    | Automático           | Salvo após Criar link         |
+| `slug`      | Automático           | Salvo após Criar link         |
+| `jobId`     | Automático           | Salvo após enviar batch       |
+
+> Os scripts de test das requests de **Register**, **Login** e **Criar link** preenchem as variáveis automaticamente.
 
 ---
 
