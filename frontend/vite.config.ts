@@ -10,6 +10,7 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5173,
+    allowedHosts: true,
     // When running behind nginx (docker compose), HMR connects on port 80
     // via the dedicated /_vite_ws location.
     hmr: {
