@@ -2,7 +2,7 @@
   <div class="layout">
     <aside class="sidebar">
       <div class="sidebar-brand">
-        <span class="logo">⚡</span>
+        <img src="../assets/logo.png" alt="ZipLink Logo" class="logo-img" />
         <span>ZipLink</span>
       </div>
       <nav>
@@ -94,7 +94,12 @@ function handleLogout(): void {
   padding: .5rem .75rem;
   margin-bottom: 1rem;
 }
-.logo { font-size: 1.4rem; }
+.logo-img {
+  height: 1.6rem;
+  width: 1.6rem;
+  object-fit: contain;
+  border-radius: 6px;
+}
 
 .nav-item {
   display: block;
