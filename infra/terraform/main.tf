@@ -12,6 +12,24 @@ provider "aws" {
   region = var.aws_region
 }
 
+# ─── SSH Key Generation ────────────────────────────────────────────────────────
+
+resource "tls_private_key" "key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "generated_key" {
+  key_name   = "${var.project_name}-key"
+  public_key = tls_private_key.key.public_key_openssh
+}
+
+resource "local_file" "private_key" {
+  content         = tls_private_key.key.private_key_pem
+  filename        = "${path.module}/ziplink-key.pem"
+  file_permission = "0600"
+}
+
 # ─── Data sources ──────────────────────────────────────────────────────────────
 
 data "aws_availability_zones" "available" { state = "available" }
@@ -130,11 +148,11 @@ resource "aws_instance" "app" {
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.app.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2.name
-  key_name               = var.key_pair_name != "" ? var.key_pair_name : null
+  key_name               = aws_key_pair.generated_key.key_name
 
   root_block_device {
     volume_type           = "gp3"
-    volume_size           = 20
+    volume_size           = 30
     delete_on_termination = true
   }
 

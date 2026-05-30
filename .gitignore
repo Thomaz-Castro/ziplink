@@ -12,6 +12,8 @@ uploads/*
 terraform.tfstate
 terraform.tfstate.backup
 *.tfvars
+!.tfvars
+*.pem
 !example.tfvars
 __pycache__/
 *.pyc

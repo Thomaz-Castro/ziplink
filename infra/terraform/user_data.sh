@@ -13,6 +13,10 @@ curl -SL "https://github.com/docker/compose/releases/latest/download/docker-comp
   -o /usr/local/lib/docker/cli-plugins/docker-compose
 chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
+curl -SL "https://github.com/docker/buildx/releases/download/v0.21.1/buildx-v0.21.1.linux-amd64" \
+  -o /usr/local/lib/docker/cli-plugins/docker-buildx
+chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
+
 # ── Clone do projeto ──────────────────────────────────────────────────────────
 git clone https://github.com/Thomaz-Castro/ziplink.git /opt/ziplink
 cd /opt/ziplink
