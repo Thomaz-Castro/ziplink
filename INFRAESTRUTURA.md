@@ -139,108 +139,34 @@ sudo docker compose -f docker-compose.prod.yml logs -f --tail=50
 sudo docker compose -f docker-compose.prod.yml restart api worker
 ```
 
----
+## 🔒 Configuração Semimanual do SSL/HTTPS (Let's Encrypt)
 
-## 🔒 Configuração Manual do SSL/HTTPS (Let's Encrypt)
+Para facilitar a sua vida e evitar erros de digitação e sintaxe no Nginx, nós criamos um script interativo de automação chamado **`setup-ssl.sh`** na pasta `scripts` do projeto.
 
-Para configurar o cadeado seguro (**HTTPS**) manualmente utilizando o Nginx e Let's Encrypt (Certbot), siga os passos abaixo pelo seu terminal do **Termius**:
+### Como rodar o Script de SSL (Via SSH/Termius):
 
-### Passo 1: Instalar o Certbot no Servidor
-Com a conexão SSH ativa na máquina do EC2, instale a ferramenta do Let's Encrypt:
+Com a conexão SSH ativa na máquina do EC2 no seu Termius, execute estes simples comandos:
+
 ```bash
-sudo dnf install -y certbot
+# 1. Entra na pasta de scripts do projeto clonado no servidor
+cd /opt/ziplink/scripts
+
+# 2. Dá permissão de execução para o script
+chmod +x setup-ssl.sh
+
+# 3. Executa o script interativo como root/sudo
+sudo ./setup-ssl.sh
 ```
 
-### Passo 2: Parar o Docker temporariamente
-O Certbot precisa levantar um validador na porta `80` para provar ao Let's Encrypt que você é dono do domínio, por isso precisamos liberar a porta temporariamente:
-```bash
-cd /opt/ziplink
-sudo docker compose -f docker-compose.prod.yml down
-```
+### O que o script fará por você interativamente:
+1. **Perguntará o seu domínio** comprado (ex: `ziplink.site`).
+2. Instalará o **Certbot** automaticamente.
+3. Parará o Docker temporariamente para liberar a porta 80.
+4. **Gerará os certificados** oficiais do Let's Encrypt.
+5. **Criará dinamicamente a configuração do Nginx com SSL**, apontando de forma perfeita para os caminhos do seu domínio e forçando o redirecionamento automático de HTTP para HTTPS.
+6. Reiniciará toda a aplicação ZipLink em segundo plano no Docker.
 
-### Passo 3: Gerar o Certificado SSL
-Execute o comando substituindo `ziplink.site` pelo seu domínio real configurado no DNS:
-```bash
-sudo certbot certonly --standalone -d ziplink.site -d www.ziplink.site --register-unsafely-without-email --agree-tos
-```
-> 📁 *Os certificados serão gerados e salvos de forma segura em `/etc/letsencrypt/live/seudominio/`*.
+Ao final do script, o seu encurtador de URLs já estará no ar com o cadeado verde ativo em:
+👉 **`https://seudominio.com`**!
 
-### Passo 4: Atualizar a Configuração do Nginx no Servidor
-Para que o Nginx utilize a porta `443` e leia os certificados gerados:
-
-1. Abra o arquivo de configuração de produção do Nginx para edição:
-   ```bash
-   sudo nano /opt/ziplink/nginx/prod.conf
-   ```
-
-2. Substitua o conteúdo do arquivo por uma configuração com suporte a SSL.
-   *(Exemplo de bloco Nginx com SSL ativo)*:
-   ```nginx
-   upstream api      { server api:3000; }
-   upstream frontend { server frontend:80; }
-
-   # Redireciona HTTP para HTTPS automaticamente
-   server {
-       listen 80;
-       server_name ziplink.site www.ziplink.site;
-       return 301 https://$host$request_uri;
-   }
-
-   # Bloco seguro HTTPS
-   server {
-       listen 443 ssl;
-       server_name ziplink.site www.ziplink.site;
-
-       ssl_certificate     /etc/letsencrypt/live/ziplink.site/fullchain.pem;
-       ssl_certificate_key /etc/letsencrypt/live/ziplink.site/privkey.pem;
-
-       ssl_protocols       TLSv1.2 TLSv1.3;
-       ssl_ciphers         HIGH:!aNULL:!MD5;
-
-       # API
-       location /api/ {
-           proxy_pass http://api;
-           proxy_set_header Host $host;
-           proxy_set_header X-Real-IP $remote_addr;
-           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-           proxy_set_header X-Forwarded-Proto $scheme;
-       }
-
-       # Bull Board
-       location /queues {
-           proxy_pass http://api;
-           proxy_set_header Host $host;
-       }
-
-       # Health check
-       location = /health {
-           proxy_pass http://api;
-       }
-
-       # SPA & Slug Redirects
-       location / {
-           proxy_pass             http://api;
-           proxy_intercept_errors on;
-           error_page 404         = @spa;
-           proxy_set_header       Host $host;
-           proxy_set_header       X-Real-IP $remote_addr;
-           proxy_set_header       X-Forwarded-For $proxy_add_x_forwarded_for;
-           proxy_set_header       X-Forwarded-Proto $scheme;
-       }
-
-       location @spa {
-           proxy_pass       http://frontend;
-           proxy_set_header Host $host;
-       }
-   }
-   ```
-   *Salve e feche o arquivo (`Ctrl + O`, `Enter`, `Ctrl + X`).*
-
-### Passo 5: Subir a aplicação novamente
-Agora que os certificados existem e a porta `443` está configurada, inicie o Docker Compose:
-```bash
-sudo docker compose -f docker-compose.prod.yml up -d --build
-```
-
-O seu ZipLink estará no ar de forma totalmente segura na URL: **`https://seudominio.com`**!
 
