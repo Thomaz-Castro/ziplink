@@ -149,6 +149,7 @@ resource "aws_instance" "app" {
   vpc_security_group_ids = [aws_security_group.app.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2.name
   key_name               = aws_key_pair.generated_key.key_name
+  user_data_replace_on_change = true
 
   root_block_device {
     volume_type           = "gp3"
@@ -159,7 +160,7 @@ resource "aws_instance" "app" {
   user_data = base64encode(templatefile("${path.module}/user_data.sh", {
     jwt_secret        = var.jwt_secret
     postgres_password = var.postgres_password
-    base_url          = "http://${aws_eip.app.public_ip}"
+    base_url          = var.domain_name != "" ? "http://${var.domain_name}" : "http://${aws_eip.app.public_ip}"
   }))
 
   tags = { Name = "${var.project_name}-server" }

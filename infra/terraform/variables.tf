@@ -34,3 +34,9 @@ variable "postgres_password" {
   sensitive   = true
   default     = "change_me_in_prod"
 }
+
+variable "domain_name" {
+  description = "Domain name for the application (e.g. example.com). Leave empty to use Elastic IP."
+  type        = string
+  default     = ""
+}
