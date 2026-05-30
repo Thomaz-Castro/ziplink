@@ -22,7 +22,7 @@ export async function authController(app: FastifyInstance): Promise<void> {
     try {
       const user = await authService.register(body.data.email, body.data.password);
       const token = app.jwt.sign(
-        { sub: user.id, email: user.email },
+        { sub: user.id, email: user.email } as any,
         { expiresIn: "7d" }
       );
       return reply.status(201).send({ user, token });
@@ -42,7 +42,7 @@ export async function authController(app: FastifyInstance): Promise<void> {
     try {
       const user = await authService.login(body.data.email, body.data.password);
       const token = app.jwt.sign(
-        { sub: user.id, email: user.email },
+        { sub: user.id, email: user.email } as any,
         { expiresIn: "7d" }
       );
       return reply.send({ user, token });

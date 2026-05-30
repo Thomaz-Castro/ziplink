@@ -53,9 +53,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   // setBasePath must be called before createBullBoard
   const boardAdapter = new BullBoardAdapter();
   boardAdapter.setBasePath("/queues");
-  createBullBoard({ queues: [new BullMQAdapter(batchQueue)], serverAdapter: boardAdapter });
+  createBullBoard({ queues: [new BullMQAdapter(batchQueue) as any], serverAdapter: boardAdapter });
 
-  await app.register(boardAdapter.registerPlugin(), { prefix: "/queues" });
+  await app.register(boardAdapter.registerPlugin() as any, { prefix: "/queues" });
 
   // ---- routes ----
   app.get("/health", async () => ({

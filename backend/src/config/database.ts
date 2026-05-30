@@ -1,4 +1,4 @@
-import { Pool, PoolClient } from "pg";
+import { Pool, PoolClient, QueryResultRow } from "pg";
 import { env } from "./env";
 
 let pool: Pool;
@@ -36,7 +36,7 @@ export async function withTransaction<T>(
   }
 }
 
-export async function query<T = Record<string, unknown>>(
+export async function query<T extends QueryResultRow = any>(
   sql: string,
   params?: unknown[]
 ) {

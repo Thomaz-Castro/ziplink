@@ -129,7 +129,7 @@ export function createBatchWorker(): Worker {
       return { successCount, failureCount, total: entries.length };
     },
     {
-      connection: getRedis(),
+      connection: getRedis() as any,
       concurrency: env.WORKER_CONCURRENCY,
     }
   );
