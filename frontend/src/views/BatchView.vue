@@ -46,7 +46,7 @@
       <div v-for="job in jobs" :key="job.id" class="card job-card">
         <div class="job-header">
           <span class="job-id">{{ job.id.slice(0, 8) }}…</span>
-          <span :class="statusClass(job.status)">{{ t.batch.status[job.status as keyof typeof t.batch.status] ?? job.status }}</span>
+          <span :class="statusClass(job.status)">{{ (t.batch.status as Record<string, string>)[job.status] ?? job.status }}</span>
           <span style="color:var(--text-muted);font-size:.8rem;margin-left:auto">{{ formatDate(job.created_at) }}</span>
         </div>
 

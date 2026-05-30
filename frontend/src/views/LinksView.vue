@@ -306,10 +306,10 @@ tr:hover td { background: var(--surface-2); }
 .copy-btn:hover { color: var(--brand); }
 .url-cell { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .actions { display: flex; gap: .35rem; }
-.btn-warning { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
-.btn-warning:hover { background: #fde68a; }
-.btn-success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
-.btn-success:hover { background: #a7f3d0; }
+.btn-warning { background: var(--warning-bg); color: var(--warning-color); border: 1px solid var(--warning-border); }
+.btn-warning:hover { background: var(--warning-hover); }
+.btn-success { background: var(--success-bg); color: var(--success-color); border: 1px solid var(--success-border); }
+.btn-success:hover { background: var(--success-hover); }
 
 .pagination {
   display: flex; align-items: center; justify-content: center; gap: 1rem;
